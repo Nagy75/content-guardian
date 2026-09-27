@@ -1,0 +1,10 @@
+const api = globalThis.chrome || globalThis.browser;
+const state = {words: [], replacement: '####', intervals: []};
+const time = (v) => { const p = v.trim().split(':').map(Number); return p.length === 2 ? p[0] * 60 + p[1] : p[0] * 3600 + p[1] * 60 + p[2]; };
+const load = (done) => api.storage.local.get({blockedWords: [], replacement: '####', skipIntervals: []}, done);
+load(v => { state.words = v.blockedWords; state.replacement = v.replacement; state.intervals = v.skipIntervals.map(x => x.split('-').map(time)).filter(x => x.length === 2 && x[1] > x[0]); });
+const filter = (text) => { let result = text; for (const word of state.words) { const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); result = result.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), state.replacement); } return result; };
+const process = (root) => { const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT); const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode); nodes.forEach(n => { const next = filter(n.nodeValue); if (next !== n.nodeValue) n.nodeValue = next; }); };
+const handleVideo = video => { const tick = () => { for (const [start, end] of state.intervals) if (video.currentTime >= start && video.currentTime < end) { video.currentTime = end; break; } }; video.addEventListener('timeupdate', tick); };
+new MutationObserver(mutations => mutations.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) process(n); }))).observe(document.documentElement, {subtree: true, childList: true});
+document.querySelectorAll('video').forEach(handleVideo); process(document.body);

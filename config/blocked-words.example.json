@@ -1,0 +1,5 @@
+{
+  "blockedWords": ["fuck", "fucking", "shit", "bitch", "asshole", "motherfucker"],
+  "replacement": "####",
+  "skipIntervals": []
+}
